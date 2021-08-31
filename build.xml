@@ -18,21 +18,33 @@
     <target name="release" depends="build">
 		<echo message="deploying to ${github.repo} v${version} ${packageId}_${version}.airpackage" />
 
-        <exec executable="git" >
-            
+        <!-- 
+            Add a tag and create a release from this tag
+        -->
+        <exec executable="git" failonerror="false" dir="${airpackage.basedir}">
+            <arg line="tag v${version}" />
         </exec>
+        <exec executable="git" failonerror="false" dir="${airpackage.basedir}">
+            <arg line="push --tags" />
+        </exec>
+		<exec executable="gh" failonerror="false" dir="${airpackage.basedir}">
+			<arg line="-R ${github.repo} release create v${version}" />
+			<arg line="--title '${version}'" />
+			<arg line="--notes 'Template release ${version}'" />
+		</exec>
 
         <!-- 
-            NOTE: 
-            You have to have created the vX.X.X release before running this,
-            this just uploads the package to the release 
+            Upload the package to the release
         -->
-		<exec executable="gh" failonerror="true">
-			<arg line="-R ${github.repo} release upload v${version.release}" />
+		<exec executable="gh" failonerror="true" dir="${airpackage.basedir}">
+			<arg line="-R ${github.repo} release upload v${version}" />
 			<arg line="${packageId}_${version}.airpackage" />
 			<arg line="--clobber" />
 		</exec>
 		
+        <!-- 
+            Publish the package to the air repository
+        -->
 		<exec executable="apm" dir="${airpackage.basedir}">
 			<arg line="publish ${packageId}_${version}.airpackage" />
 		</exec>
